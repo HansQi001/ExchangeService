@@ -36,7 +36,7 @@ namespace ExchangeService.APIApp
             {
                 dto.ExchangeRate = await exchangeServiceHelper.GetExchangeRateAsync(dto.InputCurrency, dto.OutputCurrency);
 
-                return dto;
+                return Results.Ok(dto);
             })
             .WithName("PostExchangeService")
             .WithOpenApi();
