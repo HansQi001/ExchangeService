@@ -8,6 +8,10 @@ namespace ExchangeService.APIApp
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Add logging
+            builder.Logging.ClearProviders();
+            builder.Logging.AddConsole();
+
             // Register HttpClient
             builder.Services.AddHttpClient(); ;
 
@@ -30,18 +34,7 @@ namespace ExchangeService.APIApp
 
             app.MapPost("/ExchangeService", async (ExchangeDTO dto, IExchangeService exchangeServiceHelper) =>
             {
-                try
-                {
-                    var exchangeRate = await exchangeServiceHelper.GetExchangeRateAsync(dto.InputCurrency, dto.OutputCurrency);
-
-                    dto.ExchangeRate = exchangeRate;
-                }
-                catch (Exception)
-                {
-
-                    throw;
-                }
-
+                dto.ExchangeRate = await exchangeServiceHelper.GetExchangeRateAsync(dto.InputCurrency, dto.OutputCurrency);
 
                 return dto;
             })
