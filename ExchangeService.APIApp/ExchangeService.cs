@@ -1,4 +1,5 @@
-﻿using ExchangeService.APIApp.Models;
+﻿using ExchangeService.APIApp.Helpers;
+using ExchangeService.APIApp.Models;
 using System.Text.Json;
 
 namespace ExchangeService.APIApp
@@ -8,19 +9,19 @@ namespace ExchangeService.APIApp
         Task<double> GetExchangeRateAsync(string inputCurrency, string outputCurrency, CancellationToken cancellationToken);
     }
 
-    public class ExchangeServiceHelper : IExchangeService
+    public class ExchangeService : IExchangeService
     {
-        private readonly HttpClient _httpClient;
+        private readonly IHttpHelper _httpHelper;
         private readonly string _targetUrl;
-        private readonly ILogger<ExchangeServiceHelper> _logger;
+        private readonly ILogger<ExchangeService> _logger;
         private readonly IHostEnvironment _env;
 
-        public ExchangeServiceHelper(IConfiguration config
-            , ILogger<ExchangeServiceHelper> logger
+        public ExchangeService(IConfiguration config
+            , ILogger<ExchangeService> logger
             , IHostEnvironment environment
-            , IHttpClientFactory httpClientFactory)
+            , IHttpHelper httpHelper)
         {
-            _httpClient = httpClientFactory.CreateClient();
+            _httpHelper = httpHelper;
             _logger = logger;
             _env = environment;
             _targetUrl = config["ExchangeRate:ApiUrl"]
@@ -37,20 +38,17 @@ namespace ExchangeService.APIApp
             try
             {
                 var url = string.Format(_targetUrl, inputCurrency);
-                var response = await _httpClient.GetAsync(_targetUrl, cancellationToken);
-
-                var json = await response.Content.ReadAsStringAsync(cancellationToken);
+                var data = await _httpHelper.GetAsync<ExchangeRateObject>(url, cancellationToken);
 
                 if (_env.IsDevelopment())
                 {
-                    _logger.LogInformation($"Got response content: {json}");
+                    _logger.LogInformation($"Got response content: {JsonSerializer.Serialize(data)}");
                 }
-
-                var data = JsonSerializer.Deserialize<ExchangeRateObject>(json);
 
                 return "success".Equals(data?.Result) ? (data.Rates?[outputCurrency] ?? 0)
                     : throw new Exception("Failed to get the exchange rate.");
             }
+
             catch (Exception)
             {
 

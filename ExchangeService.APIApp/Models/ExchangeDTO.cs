@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace ExchangeService.APIApp.Models
 {
@@ -16,7 +17,8 @@ namespace ExchangeService.APIApp.Models
         [MaxLength(3)]
         public string OutputCurrency { get; set; } = "USD";
 
-        public double ExchangeRate { private get; set; } = 1;
+        [JsonIgnore]
+        public double ExchangeRate { get; set; } = 0;
 
         public string Value => (Amount * ExchangeRate).ToString("#.##");
     }
