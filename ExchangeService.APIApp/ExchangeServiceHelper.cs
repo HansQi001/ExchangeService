@@ -5,7 +5,7 @@ namespace ExchangeService.APIApp
 {
     public interface IExchangeService
     {
-        Task<double> GetExchangeRateAsync(string inputCurrency, string outputCurrency);
+        Task<double> GetExchangeRateAsync(string inputCurrency, string outputCurrency, CancellationToken cancellationToken);
     }
 
     public class ExchangeServiceHelper : IExchangeService
@@ -27,18 +27,19 @@ namespace ExchangeService.APIApp
                 ?? throw new Exception("Exchange rate url is missing.");
         }
 
-        public async Task<double> GetExchangeRateAsync(string inputCurrency, string outputCurrency)
+        public async Task<double> GetExchangeRateAsync(string inputCurrency, string outputCurrency, CancellationToken cancellationToken)
         {
             if (_env.IsDevelopment())
             {
                 _logger.LogInformation($"Input currecy: {inputCurrency}, output currency: {outputCurrency}");
             }
-            
+
             try
             {
-                var response = await _httpClient.GetAsync(_targetUrl);
+                var url = string.Format(_targetUrl, inputCurrency);
+                var response = await _httpClient.GetAsync(_targetUrl, cancellationToken);
 
-                var json = await response.Content.ReadAsStringAsync();
+                var json = await response.Content.ReadAsStringAsync(cancellationToken);
 
                 if (_env.IsDevelopment())
                 {
@@ -47,7 +48,7 @@ namespace ExchangeService.APIApp
 
                 var data = JsonSerializer.Deserialize<ExchangeRateObject>(json);
 
-                return "success".Equals(data?.Result) ? (data.Rates?.USD ?? 0)
+                return "success".Equals(data?.Result) ? (data.Rates?[outputCurrency] ?? 0)
                     : throw new Exception("Failed to get the exchange rate.");
             }
             catch (Exception)

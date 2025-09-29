@@ -32,9 +32,9 @@ namespace ExchangeService.APIApp
 
             app.UseHttpsRedirection();
 
-            app.MapPost("/ExchangeService", async (ExchangeDTO dto, IExchangeService exchangeServiceHelper) =>
+            app.MapPost("/ExchangeService", async (ExchangeDTO dto, IExchangeService exchangeServiceHelper, CancellationToken cancellationToken) =>
             {
-                dto.ExchangeRate = await exchangeServiceHelper.GetExchangeRateAsync(dto.InputCurrency, dto.OutputCurrency);
+                dto.ExchangeRate = await exchangeServiceHelper.GetExchangeRateAsync(dto.InputCurrency, dto.OutputCurrency, cancellationToken);
 
                 return Results.Ok(dto);
             })
