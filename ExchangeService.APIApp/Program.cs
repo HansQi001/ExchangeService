@@ -1,5 +1,4 @@
 using ExchangeService.APIApp.Helpers;
-using ExchangeService.APIApp.Models;
 using Polly;
 using Polly.Extensions.Http;
 
@@ -18,7 +17,7 @@ namespace ExchangeService.APIApp
             // Register HttpClient
             builder.Services.AddHttpClient("ExchangeClient")
                 .AddPolicyHandler(policy => HttpPolicyExtensions
-                    .HandleTransientHttpError() 
+                    .HandleTransientHttpError()
                     .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))  // set retry
                 .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(5)); // set timeout
 
@@ -29,6 +28,8 @@ namespace ExchangeService.APIApp
             builder.Services.AddSingleton<IHttpHelper, HttpHelper>();
             builder.Services.AddSingleton<IExchangeService, ExchangeService>();
 
+            builder.Services.AddControllers();
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -38,21 +39,11 @@ namespace ExchangeService.APIApp
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            // disable https redirection to satisfy the curl command in the Assignment, it's http
+            // curl -X 'POST' 'http://localhost:5050/ExchangeService' -H 'accept: text/plain' -H 'Content-Type: application/json' -d '{ "amount": 5, "inputCurrency": "AUD", "outputCurrency": "USD"}' 
+            //app.UseHttpsRedirection(); 
 
-            app.MapPost("/ExchangeService", async (ExchangeDTO dto, IExchangeService exchangeServiceHelper, CancellationToken cancellationToken) =>
-            {
-                dto.ExchangeRate = await exchangeServiceHelper.GetExchangeRateAsync(dto.InputCurrency, dto.OutputCurrency, cancellationToken);
-
-                if (dto.ExchangeRate == 0)
-                {
-                    return Results.NotFound();
-                }
-
-                return Results.Ok(dto);
-            })
-            .WithName("PostExchangeService")
-            .WithOpenApi();
+            app.MapControllers();
 
             app.Run();
         }
