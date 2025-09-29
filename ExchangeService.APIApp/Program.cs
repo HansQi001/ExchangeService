@@ -1,3 +1,4 @@
+using ExchangeService.APIApp.Models;
 
 namespace ExchangeService.APIApp
 {
@@ -7,15 +8,14 @@ namespace ExchangeService.APIApp
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-            builder.Services.AddAuthorization();
+            // Register HttpClient
+            builder.Services.AddHttpClient(); ;
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            // Register HttpClient
-            builder.Services.AddHttpClient();
+            builder.Services.AddSingleton<IExchangeService, ExchangeServiceHelper>();
 
             var app = builder.Build();
 
@@ -28,11 +28,22 @@ namespace ExchangeService.APIApp
 
             app.UseHttpsRedirection();
 
-            app.UseAuthorization();
-
-            app.MapPost("/ExchangeService", (HttpContext httpContext) =>
+            app.MapPost("/ExchangeService", async (ExchangeDTO dto, IExchangeService exchangeServiceHelper) =>
             {
-                
+                try
+                {
+                    var exchangeRate = await exchangeServiceHelper.GetExchangeRateAsync(dto.InputCurrency, dto.OutputCurrency);
+
+                    dto.ExchangeRate = exchangeRate;
+                }
+                catch (Exception)
+                {
+
+                    throw;
+                }
+
+
+                return dto;
             })
             .WithName("PostExchangeService")
             .WithOpenApi();
